@@ -27,7 +27,7 @@ func main() {
 			},
 		})
 	if err != nil {
-		log.Fatal("%s", err)
+		log.Fatalf("%s", err)
 	}
 
 	server.Consume()
