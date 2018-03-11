@@ -8,6 +8,7 @@ import (
 )
 
 type Server struct {
+	amqpURI             string
 	connection          *amqp.Connection
 	channel             *amqp.Channel
 	done                chan error
@@ -15,25 +16,34 @@ type Server struct {
 }
 
 func NewServer(amqpURI string, tasks map[string]func(string)) (*Server, error) {
+	if len(tasks) == 0 {
+		return nil, fmt.Errorf("must provide at least one task")
+	}
+
 	server := &Server{
+		amqpURI:             amqpURI,
 		connection:          nil,
 		channel:             nil,
 		done:                make(chan error),
 		handlersByQueueName: tasks,
 	}
 
+	return server, nil
+}
+
+func (server *Server) Connect() error {
 	var err error
 
-	log.Printf("connecting %q", amqpURI)
-	server.connection, err = amqp.Dial(amqpURI)
+	log.Printf("connecting %q", server.amqpURI)
+	server.connection, err = amqp.Dial(server.amqpURI)
 	if err != nil {
-		return nil, fmt.Errorf("Dial: %s", err)
+		return fmt.Errorf("Dial: %s", err)
 	}
 
 	log.Printf("creating channel")
 	server.channel, err = server.connection.Channel()
 	if err != nil {
-		return nil, fmt.Errorf("Channel: %s", err)
+		return fmt.Errorf("Channel: %s", err)
 	}
 
 	log.Printf("creating queues")
@@ -48,14 +58,17 @@ func NewServer(amqpURI string, tasks map[string]func(string)) (*Server, error) {
 			nil,       // arguments
 		)
 		if err != nil {
-			return nil, fmt.Errorf("Queue Declare: %s", err)
+			return fmt.Errorf("Queue Declare: %s", err)
 		}
 	}
 
-	return server, nil
+	return nil
 }
 
-func (server Server) Consume() error {
+func (server *Server) Consume() error {
+	if server.channel == nil {
+		return fmt.Errorf("Server must be call Connect() before Consume")
+	}
 	var channels []chan error
 
 	log.Printf("setting up %d handlers", len(server.handlersByQueueName))
