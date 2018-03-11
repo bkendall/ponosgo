@@ -31,13 +31,13 @@ func main() {
 	}
 
 	if err := server.Connect(); err != nil {
-    log.Fatalf("Connecting: %s", err)
-    return
-  }
+		log.Fatalf("Connecting: %s", err)
+		return
+	}
 	if err := server.Consume(); err != nil {
-    log.Fatalf("Consuming: %s", err)
-    return
-  }
+		log.Fatalf("Consuming: %s", err)
+		return
+	}
 
 	if *lifetime > 0 {
 		log.Printf("running for %s", *lifetime)
