@@ -30,7 +30,14 @@ func main() {
 		log.Fatalf("%s", err)
 	}
 
-	server.Consume()
+	if err := server.Connect(); err != nil {
+    log.Fatalf("Connecting: %s", err)
+    return
+  }
+	if err := server.Consume(); err != nil {
+    log.Fatalf("Consuming: %s", err)
+    return
+  }
 
 	if *lifetime > 0 {
 		log.Printf("running for %s", *lifetime)
